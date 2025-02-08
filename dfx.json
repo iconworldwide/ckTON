@@ -1,0 +1,38 @@
+{
+  "canisters": {
+    "ckTon_backend": {
+      "candid": "src/ckTon_backend/ckTon_backend.did",
+      "package": "ckTon_backend",
+      "type": "rust"
+    },
+    "ckTon_frontend": {
+      "dependencies": [
+        "ckTon_backend"
+      ],
+      "source": [
+        "src/ckTon_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "ckTon_frontend"
+    },
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
