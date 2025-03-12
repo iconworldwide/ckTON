@@ -57,7 +57,6 @@ pub struct ProxyRequest {
 
 pub struct TONDeployedWallet {
     pub ton_address: String,
-    pub sequence_number: u64,
 }
 
 pub enum PendingTasks {

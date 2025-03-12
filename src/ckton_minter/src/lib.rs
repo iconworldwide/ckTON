@@ -96,7 +96,6 @@ fn init() {
                                             account,
                                             TONDeployedWallet {
                                                 ton_address,
-                                                sequence_number: result.seqno.unwrap(),
                                             },
                                         );
                                     });
@@ -391,15 +390,20 @@ async fn _deploy_wallet(owner: Principal, subaccount: Option<[u8; 32]>, expire :
 
     // removed it because i don't want to make cycles calling TON rpc to check wallet state
 
-    // let ton_response = ton_api::get_ton_wallet_info(get_ton_address(&wallet)).await.unwrap();
+    let ton_response = ton_api::get_ton_wallet_info(get_ton_address_from_wallet(&wallet)).await.unwrap();
 
-    // if !ton_response.ok {
-    //     return Err(ton_response.error.unwrap_or("Failed to get wallet info".to_string()));
-    // }
+    if !ton_response.ok {
+        return Err(ton_response.error.unwrap_or("Failed to get wallet info".to_string()));
+    }
 
-    // if ton_response.result.unwrap().wallet {
-    //     return Err("Wallet already deployed".to_string());
-    // }
+    if ton_response.result.unwrap().wallet {
+        DEPLOYED_WALLET.with_borrow_mut(|store| {
+            store.insert(acc, TONDeployedWallet {
+                ton_address: get_ton_address_from_wallet(&wallet),
+            });
+        });
+        return Err("Wallet already deployed".to_string());
+    }
 
     // let internal_mssg = wallet
     //     .create_internal_message()
@@ -824,8 +828,8 @@ async fn wallet_count() -> u64 {
 async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
     let (ledger_record, indexer_record, ckton_transfer_fee, ton_fee) = (setup_args.ledger_canister, setup_args.indexer_canister, setup_args.ckton_transfer_fee, setup_args.ton_fee);
 
-    CK_LEDGER_CANISTER.set(ledger_record);
-    CK_INDEXER_CANISTER.set(indexer_record);
+    CK_LEDGER_CANISTER.set(indexer_record);
+    CK_INDEXER_CANISTER.set(ledger_record);
 
     if let Some(ckton_transfer_fee) = ckton_transfer_fee {
         CKTON_TRANSFER_FEE.set(ckton_transfer_fee);
