@@ -26,6 +26,7 @@ const notification = ref({ show: false, message: '', type: 'info' });
 const isAuthenticated = ref(false);
 const receiveAddress = ref('');
 const isWalletDeployed = ref(false); // New state variable to track if wallet is deployed
+const isProduction = ref(IC_HOST === 'https://ic0.app' || IC_HOST === 'https://icp0.io' || IC_HOST === 'https://icp-api.io');
 
 // Switch network
 function switchNetwork() {
@@ -245,13 +246,16 @@ function showNotification(message, type = 'info') {
     message,
     type
   };
+  
+  // Remove auto-hiding functionality
+  // setTimeout(() => {
+  //   notification.value.show = false;
+  // }, 5000);
+}
 
-  // Only auto-hide non-loading notifications
-  if (type !== 'loading') {
-    setTimeout(() => {
-      notification.value.show = false;
-    }, 5000);
-  }
+// Close notification manually
+function closeNotification() {
+  notification.value.show = false;
 }
 
 // Show loading notification
@@ -342,6 +346,16 @@ async function generateAllAddresses() {
     showNotification('Failed to generate addresses: ' + error.message, 'error');
   }
 }
+
+// Function to copy text to clipboard
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showNotification('Copied to clipboard!', 'success');
+  } catch (err) {
+    showNotification('Failed to copy: ' + err.message, 'error');
+  }
+}
 </script>
 
 <template>
@@ -376,24 +390,35 @@ async function generateAllAddresses() {
         'bg-red-100 border-red-500 text-red-700': notification.type === 'error',
         'bg-blue-100 border-blue-500 text-blue-700': notification.type === 'info',
         'bg-gray-100 border-gray-500 text-gray-700': notification.type === 'loading'
-      }" class="border-l-4 p-4 mb-6 rounded shadow-sm flex items-center">
-        <div v-if="notification.type === 'loading'" class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
-        <div v-else-if="notification.type === 'success'" class="text-green-500 mr-3">
+      }" class="border-l-4 p-4 mb-6 rounded shadow-sm flex items-center justify-between">
+        <div class="flex items-center">
+          <div v-if="notification.type === 'loading'" class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+          <div v-else-if="notification.type === 'success'" class="text-green-500 mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div v-else-if="notification.type === 'error'" class="text-red-500 mr-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p class="font-medium">
+              {{ notification.type === 'success' ? 'Success!' : notification.type === 'error' ? 'Error!' : notification.type === 'loading' ? 'Processing...' : 'Information' }}
+            </p>
+            <p>{{ notification.message }}</p>
+          </div>
+        </div>
+        
+        <!-- Close button - only show for non-loading notifications -->
+        <button v-if="notification.type !== 'loading'" 
+          @click="closeNotification" 
+          class="text-gray-500 hover:text-gray-700 focus:outline-none">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
           </svg>
-        </div>
-        <div v-else-if="notification.type === 'error'" class="text-red-500 mr-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div>
-          <p class="font-medium">
-            {{ notification.type === 'success' ? 'Success!' : notification.type === 'error' ? 'Error!' : notification.type === 'loading' ? 'Processing...' : 'Information' }}
-          </p>
-          <p>{{ notification.message }}</p>
-        </div>
+        </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -503,6 +528,83 @@ async function generateAllAddresses() {
               Withdraw to TON
             </button>
           </form>
+        </div>
+
+        <!-- Canister Information Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 md:col-span-2">
+          <h2 class="text-xl font-semibold mb-4">Canister Information</h2>
+          <div class="space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
+              <span class="font-medium mr-2 mb-2 sm:mb-0">Dashboard Canister:</span>
+              <div class="flex-1 flex items-center">
+                <span v-if="isProduction" class="break-all">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_DASHBOARD_CANISTER_ID}`" 
+                     target="_blank" 
+                     class="text-blue-600 hover:underline">
+                    {{ CKTON_DASHBOARD_CANISTER_ID }}
+                  </a>
+                </span>
+                <span v-else class="break-all">{{ CKTON_DASHBOARD_CANISTER_ID }}</span>
+                <button @click="copyToClipboard(CKTON_DASHBOARD_CANISTER_ID)" 
+                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
+                        title="Copy to clipboard">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
+              <span class="font-medium mr-2 mb-2 sm:mb-0">Ledger Canister:</span>
+              <div class="flex-1 flex items-center">
+                <span v-if="isProduction" class="break-all">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_LEDGER_CANISTER_ID}`" 
+                     target="_blank" 
+                     class="text-blue-600 hover:underline">
+                    {{ CKTON_LEDGER_CANISTER_ID }}
+                  </a>
+                </span>
+                <span v-else class="break-all">{{ CKTON_LEDGER_CANISTER_ID }}</span>
+                <button @click="copyToClipboard(CKTON_LEDGER_CANISTER_ID)" 
+                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
+                        title="Copy to clipboard">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
+              <span class="font-medium mr-2 mb-2 sm:mb-0">Minter Canister:</span>
+              <div class="flex-1 flex items-center">
+                <span v-if="isProduction" class="break-all">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_MINTER_CANISTER_ID}`" 
+                     target="_blank" 
+                     class="text-blue-600 hover:underline">
+                    {{ CKTON_MINTER_CANISTER_ID }}
+                  </a>
+                </span>
+                <span v-else class="break-all">{{ CKTON_MINTER_CANISTER_ID }}</span>
+                <button @click="copyToClipboard(CKTON_MINTER_CANISTER_ID)" 
+                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
+                        title="Copy to clipboard">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div class="text-xs text-gray-500 mt-2">
+              <p v-if="isProduction">Click on canister IDs to view them on the IC Dashboard.</p>
+              <p v-else>Running in development/test environment.</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>

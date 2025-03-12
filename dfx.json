@@ -15,16 +15,7 @@
       "type": "assets",
       "workspace": "ckton_dashboard"
     },
-    "icrc1_ledger_canister": {
-      "type": "custom",
-      "candid": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-02-27/ledger.did",
-      "wasm": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-02-27/ic-icrc1-ledger.wasm.gz"
-    },
-    "icrc1_index_canister": {
-      "type": "custom",
-      "candid": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-02-27/index-ng.did",
-      "wasm": "https://github.com/dfinity/ic/releases/download/ledger-suite-icrc-2025-02-27/ic-icrc1-index-ng.wasm.gz"
-    },
+   
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
       "frontend": {},
