@@ -16,6 +16,7 @@ type Result_1 = variant { Ok : text; Err : text };
 type Result_2 = variant { Ok : record { text; nat64 }; Err : text };
 type TransformArgs = record { context : blob; response : HttpResponse };
 service : () -> {
+  admin_mint_wallet_deploy : () -> (Result);
   admin_setup : (AdminSetup) -> (Result);
   deploy_ton_wallet : (opt blob, opt nat32) -> (Result_1);
   destroy_ton_wallet : (text, opt blob, opt nat32) -> (Result_1);
