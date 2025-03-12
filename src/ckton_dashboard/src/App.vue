@@ -78,43 +78,6 @@ async function get_ckton_minter() {
 
 }
 
-// Generate/get TON address
-async function generateTonAddress() {
-  let identity = await getIdentity();
-  if (!identity) {
-    showNotification('Please connect to Internet Identity', 'error');
-    return;
-  }
-  try {
-    showLoading('Generating TON address...');
-    let cktonMinter = await get_ckton_minter();
-    if (!cktonMinter) return;
-
-    let address = await cktonMinter.generate_ton_address([], []);
-    if (!address) {
-      address = await cktonMinter.generate_ton_address()
-    }
-
-    tonAddress.value = address;
-    showNotification('TON address generated successfully', 'success');
-  } catch (error) {
-    showNotification('Failed to generate TON address: ' + error.message, 'error');
-  } 
-}
-
-// Get IC account address
-async function getIcAccountAddress() {
-  try {
-    showLoading('Retrieving IC account address...');
-    const minter = await get_ckton_minter();
-    if (!minter) return
-    let address = await minter.get_deposit_address([])
-    icAccountAddress.value = address;
-    showNotification('IC account address retrieved', 'success');
-  } catch (error) {
-    showNotification('Failed to get IC account address: ' + error.message, 'error');
-  }
-}
 
 // Fetch balances
 async function fetchBalances() {
@@ -337,9 +300,6 @@ async function generateAllAddresses() {
       tonAddr = await minter.generate_ton_address();
     }
     tonAddress.value = tonAddr;
-    
-    // Fetch balances to update wallet deployment status
-    await fetchBalances();
     
     showNotification('Addresses generated successfully', 'success');
   } catch (error) {
