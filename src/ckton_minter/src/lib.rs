@@ -824,11 +824,8 @@ async fn wallet_count() -> u64 {
 async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
     let (ledger_record, indexer_record, ckton_transfer_fee, ton_fee) = (setup_args.ledger_canister, setup_args.indexer_canister, setup_args.ckton_transfer_fee, setup_args.ton_fee);
 
-    let ledger_canister = CK_LEDGER_CANISTER.with_borrow_mut(|canister| canister.clone());
-    let indexer_canister = CK_INDEXER_CANISTER.with_borrow_mut(|canister| canister.clone());
-
-    ledger_canister.set(ledger_record);
-    indexer_canister.set(indexer_record);
+    CK_LEDGER_CANISTER.set(ledger_record);
+    CK_INDEXER_CANISTER.set(indexer_record);
 
     if let Some(ckton_transfer_fee) = ckton_transfer_fee {
         CKTON_TRANSFER_FEE.set(ckton_transfer_fee);
