@@ -11,7 +11,8 @@ import TonWeb from 'tonweb';
 
 
 
-
+let provider = new TonWeb.HttpProvider("https://testnet.toncenter.com/api/v2/jsonRPC");
+let tonweb = new TonWeb(provider);
 // State variables
 const network = ref('testnet'); // 'mainnet' or 'testnet'
 const ckTonBalance = ref(0);
@@ -108,7 +109,7 @@ async function fetchBalances() {
     if (tonAddress.value) {
       let provider = new TonWeb.HttpProvider("https://testnet.toncenter.com/api/v2/jsonRPC");
       let tonweb = new TonWeb(provider);
-      
+
       // Check if the wallet is deployed
       try {
         let walletInfo = await tonweb.provider.getAddressInfo(tonAddress.value);
@@ -117,13 +118,13 @@ async function fetchBalances() {
         console.error("Error checking wallet state:", error);
         isWalletDeployed.value = false;
       }
-      
+
       let wallet_balance = await tonweb.getBalance(tonAddress.value);
       tonBalance.value = wallet_balance;
     }
   } catch (error) {
     showNotification('Failed to fetch balances: ' + error.message, 'error');
-  } 
+  }
 }
 
 // Mint ckTon
@@ -165,7 +166,7 @@ async function mintCkTon() {
 
 // Withdraw ckTon to native TON
 async function withdrawCkTon() {
-  
+
   if (!withdrawAmount.value || parseFloat(withdrawAmount.value) <= 0) {
     showNotification('Please enter a valid amount', 'error');
     return;
@@ -209,7 +210,7 @@ function showNotification(message, type = 'info') {
     message,
     type
   };
-  
+
   // Remove auto-hiding functionality
   // setTimeout(() => {
   //   notification.value.show = false;
@@ -250,26 +251,42 @@ onMounted(async () => {
   }
 });
 
+
+async function getTonBalance() {
+  if (!tonAddress.value) {
+    showNotification('No TON address available', 'error');
+    return;
+  }
+
+  let balance = await tonweb.getBalance(tonAddress.value);
+
+  return balance;
+}
+
+
+
 // New function to deploy TON wallet
 async function deployTonWallet() {
   if (!tonAddress.value) {
     showNotification('No TON address available', 'error');
     return;
   }
-  // Check if TON balance is 0
-  if (tonBalance.value === 0) {
-    showNotification('You need to have TON in your wallet to deploy it', 'error');
-    return;
-  }
-  
+
   try {
+    let balance = await getTonBalance();
+    // Check if TON balance is 0
+    if (balance === 0) {
+      showNotification('You need to have TON in your wallet to deploy it', 'error');
+      return;
+    }
+
     showLoading('Deploying wallet...');
-    
+
     let minter = await get_ckton_minter();
     if (!minter) return;
-    
+
     let result = await minter.deploy_ton_wallet([], []);
-    
+
     if (result.Ok) {
       showNotification('Wallet deployment initiated. This may take a few minutes to complete.', 'success');
       // We'll check the status again after a delay
@@ -289,18 +306,18 @@ async function generateAllAddresses() {
     // First get the IC account address
     const minter = await get_ckton_minter();
     if (!minter) return;
-    
+
     // Get IC account address
     let icAddress = await minter.get_deposit_address([]);
     icAccountAddress.value = icAddress;
-    
+
     // Generate TON address
     let tonAddr = await minter.generate_ton_address([], []);
     if (!tonAddr) {
       tonAddr = await minter.generate_ton_address();
     }
     tonAddress.value = tonAddr;
-    
+
     showNotification('Addresses generated successfully', 'success');
   } catch (error) {
     showNotification('Failed to generate addresses: ' + error.message, 'error');
@@ -353,31 +370,38 @@ async function copyToClipboard(text) {
         'bg-gray-100 border-gray-500 text-gray-700': notification.type === 'loading'
       }" class="border-l-4 p-4 mb-6 rounded shadow-sm flex items-center justify-between">
         <div class="flex items-center">
-          <div v-if="notification.type === 'loading'" class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+          <div v-if="notification.type === 'loading'"
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
           <div v-else-if="notification.type === 'success'" class="text-green-500 mr-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd" />
             </svg>
           </div>
           <div v-else-if="notification.type === 'error'" class="text-red-500 mr-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd" />
             </svg>
           </div>
           <div>
             <p class="font-medium">
-              {{ notification.type === 'success' ? 'Success!' : notification.type === 'error' ? 'Error!' : notification.type === 'loading' ? 'Processing...' : 'Information' }}
+              {{ notification.type === 'success' ? 'Success!' : notification.type === 'error' ? 'Error!' :
+                notification.type === 'loading' ? 'Processing...' : 'Information' }}
             </p>
             <p>{{ notification.message }}</p>
           </div>
         </div>
-        
+
         <!-- Close button - only show for non-loading notifications -->
-        <button v-if="notification.type !== 'loading'" 
-          @click="closeNotification" 
+        <button v-if="notification.type !== 'loading'" @click="closeNotification"
           class="text-gray-500 hover:text-gray-700 focus:outline-none">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            <path fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
           </svg>
         </button>
       </div>
@@ -405,10 +429,10 @@ async function copyToClipboard(text) {
         <!-- Addresses Card -->
         <div class="bg-white rounded-lg shadow-md p-6">
           <h2 class="text-xl font-semibold mb-4">Your Addresses</h2>
-          
+
           <!-- Generate All Addresses Button -->
-         
-          
+
+
           <div class="space-y-4">
             <div>
               <div class="flex justify-between mb-1">
@@ -418,7 +442,7 @@ async function copyToClipboard(text) {
                 {{ tonAddress || 'No address generated yet' }}
               </div>
               <div v-if="tonAddress && !isWalletDeployed" class="mt-2">
-                <button @click="deployTonWallet" 
+                <button @click="deployTonWallet"
                   class="w-full text-white bg-yellow-500 py-2 rounded hover:bg-yellow-600 transition-colors">
                   Deploy Wallet
                 </button>
@@ -441,10 +465,10 @@ async function copyToClipboard(text) {
               </div>
             </div>
 
-             <button @click="generateAllAddresses" 
-            class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors mb-4">
-            Generate All Addresses
-          </button>
+            <button @click="generateAllAddresses"
+              class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors mb-4">
+              Generate All Addresses
+            </button>
           </div>
         </div>
 
@@ -499,90 +523,86 @@ async function copyToClipboard(text) {
               <span class="font-medium mr-2 mb-2 sm:mb-0">Dashboard Canister:</span>
               <div class="flex-1 flex items-center">
                 <span v-if="isProduction" class="break-all">
-                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_DASHBOARD_CANISTER_ID}`" 
-                     target="_blank" 
-                     class="text-blue-600 hover:underline">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_DASHBOARD_CANISTER_ID}`"
+                    target="_blank" class="text-blue-600 hover:underline">
                     {{ CKTON_DASHBOARD_CANISTER_ID }}
                   </a>
                 </span>
                 <span v-else class="break-all">{{ CKTON_DASHBOARD_CANISTER_ID }}</span>
-                <button @click="copyToClipboard(CKTON_DASHBOARD_CANISTER_ID)" 
-                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
-                        title="Copy to clipboard">
+                <button @click="copyToClipboard(CKTON_DASHBOARD_CANISTER_ID)"
+                  class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" title="Copy to clipboard">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    <path
+                      d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
                   </svg>
                 </button>
               </div>
             </div>
-            
+
             <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
               <span class="font-medium mr-2 mb-2 sm:mb-0">Ledger Canister:</span>
               <div class="flex-1 flex items-center">
                 <span v-if="isProduction" class="break-all">
-                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_LEDGER_CANISTER_ID}`" 
-                     target="_blank" 
-                     class="text-blue-600 hover:underline">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_LEDGER_CANISTER_ID}`"
+                    target="_blank" class="text-blue-600 hover:underline">
                     {{ CKTON_LEDGER_CANISTER_ID }}
                   </a>
                 </span>
                 <span v-else class="break-all">{{ CKTON_LEDGER_CANISTER_ID }}</span>
-                <button @click="copyToClipboard(CKTON_LEDGER_CANISTER_ID)" 
-                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
-                        title="Copy to clipboard">
+                <button @click="copyToClipboard(CKTON_LEDGER_CANISTER_ID)"
+                  class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" title="Copy to clipboard">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    <path
+                      d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
                   </svg>
                 </button>
               </div>
             </div>
-            
+
             <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
               <span class="font-medium mr-2 mb-2 sm:mb-0">Minter Canister:</span>
               <div class="flex-1 flex items-center">
                 <span v-if="isProduction" class="break-all">
-                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_MINTER_CANISTER_ID}`" 
-                     target="_blank" 
-                     class="text-blue-600 hover:underline">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_MINTER_CANISTER_ID}`"
+                    target="_blank" class="text-blue-600 hover:underline">
                     {{ CKTON_MINTER_CANISTER_ID }}
                   </a>
                 </span>
                 <span v-else class="break-all">{{ CKTON_MINTER_CANISTER_ID }}</span>
-                <button @click="copyToClipboard(CKTON_MINTER_CANISTER_ID)" 
-                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
-                        title="Copy to clipboard">
+                <button @click="copyToClipboard(CKTON_MINTER_CANISTER_ID)"
+                  class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" title="Copy to clipboard">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    <path
+                      d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
                   </svg>
                 </button>
               </div>
             </div>
-            
+
             <div class="flex flex-col sm:flex-row sm:items-center p-3 bg-gray-50 rounded">
               <span class="font-medium mr-2 mb-2 sm:mb-0">Indexer Canister:</span>
               <div class="flex-1 flex items-center">
                 <span v-if="isProduction" class="break-all">
-                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_INDEXER_CANISTER_ID}`" 
-                     target="_blank" 
-                     class="text-blue-600 hover:underline">
+                  <a :href="`https://dashboard.internetcomputer.org/canister/${CKTON_INDEXER_CANISTER_ID}`"
+                    target="_blank" class="text-blue-600 hover:underline">
                     {{ CKTON_INDEXER_CANISTER_ID }}
                   </a>
                 </span>
                 <span v-else class="break-all">{{ CKTON_INDEXER_CANISTER_ID }}</span>
-                <button @click="copyToClipboard(CKTON_INDEXER_CANISTER_ID)" 
-                        class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" 
-                        title="Copy to clipboard">
+                <button @click="copyToClipboard(CKTON_INDEXER_CANISTER_ID)"
+                  class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none" title="Copy to clipboard">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    <path
+                      d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
                   </svg>
                 </button>
               </div>
             </div>
-            
+
             <div class="text-xs text-gray-500 mt-2">
               <p v-if="isProduction">Click on canister IDs to view them on the IC Dashboard.</p>
               <p v-else>Running in development/test environment.</p>
