@@ -1,5 +1,7 @@
 [workspace]
 members = [
-    "src/ckTon_backend"
+    "src/ckton_minter"
 ]
 resolver = "2"
+[workspace.dependencies]
+ic-ton-lib = {path = "../ic-ton-lib"}

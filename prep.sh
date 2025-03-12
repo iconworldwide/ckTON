@@ -1,0 +1,2 @@
+cargo build --release --target wasm32-unknown-unknown --package ckton_minter && candid-extractor target/wasm32-unknown-unknown/release/ckton_minter.wasm > src/ckton_minter/ckton_minter.did
+# cargo build --release --target wasm32-unknown-unknown --package ckton_dashboard && cp target/wasm32-unknown-unknown/release/ckton_dashboard.wasm src/bin && candid-extractor target/wasm32-unknown-unknown/release/ckton_dashboard.wasm > src/ckton_dashboard/ckton_dashboard.did

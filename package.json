@@ -13,6 +13,12 @@
   },
   "type": "module",
   "workspaces": [
-    "src/ckTon_frontend"
-  ]
+    "src/ckton_dashboard"
+  ],
+  "dependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "buffer": "^6.0.3",
+    "tailwindcss": "^4.0.9",
+    "vue3-toastify": "^0.2.8"
+  }
 }

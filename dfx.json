@@ -1,19 +1,19 @@
 {
   "canisters": {
-    "ckTon_backend": {
-      "candid": "src/ckTon_backend/ckTon_backend.did",
-      "package": "ckTon_backend",
+    "ckton_minter": {
+      "candid": "src/ckton_minter/ckton_minter.did",
+      "package": "ckton_minter",
       "type": "rust"
     },
-    "ckTon_frontend": {
+    "ckton_dashboard": {
       "dependencies": [
-        "ckTon_backend"
+        "ckton_minter"
       ],
       "source": [
-        "src/ckTon_frontend/dist"
+        "src/ckton_dashboard/dist"
       ],
       "type": "assets",
-      "workspace": "ckTon_frontend"
+      "workspace": "ckton_dashboard"
     },
     "internet_identity": {
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
