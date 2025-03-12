@@ -43,7 +43,10 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+#[cfg(network = "local")]
 const INDEXER_WASM: &[u8] = include_bytes!("../bin/index-ng.wasm");
+
+#[cfg(network = "local")]
 const LEDGER_WASM: &[u8] = include_bytes!("../bin/ledger.wasm");
 
 thread_local! {
@@ -816,6 +819,36 @@ async fn wallet_count() -> u64 {
     DEPLOYED_WALLET.with_borrow(|store| store.len() as u64)
 }
 
+#[cfg(network = "ic")]
+#[ic_cdk::update(guard = is_mint_controller)]
+async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
+    let (ledger_record, indexer_record, ckton_transfer_fee, ton_fee) = (setup_args.ledger_canister, setup_args.indexer_canister, setup_args.ckton_transfer_fee, setup_args.ton_fee);
+
+    let ledger_canister = CK_LEDGER_CANISTER.with_borrow_mut(|canister| canister.clone());
+    let indexer_canister = CK_INDEXER_CANISTER.with_borrow_mut(|canister| canister.clone());
+
+    ledger_canister.set(ledger_record);
+    indexer_canister.set(indexer_record);
+
+    if let Some(ckton_transfer_fee) = ckton_transfer_fee {
+        CKTON_TRANSFER_FEE.set(ckton_transfer_fee);
+    }
+
+    if let Some(ton_fee) = ton_fee {
+        TON_FEE.set(ton_fee);
+    }
+
+    let wallet = create_ton_wallet(id(), None).await?;
+
+    APP_TON_ADDRESS.set(wallet.address);
+
+    // deploy wallet
+    _deploy_wallet(id(), None, None).await?;
+
+    Ok(())
+}
+
+#[cfg(network = "local")]
 #[ic_cdk::update(guard = is_mint_controller)]
 async fn admin_setup(setup_args: Option<AdminSetup>) -> Result<(), String> {
 
