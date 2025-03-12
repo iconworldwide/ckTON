@@ -262,7 +262,7 @@ fn verify_mint_transaction(tx: &TonTransaction, dest_addr: &TonAddress) -> Resul
     Ok(amount)
 }
 
-#[cfg(network = "local")]
+#[cfg(network = "ic")]
 #[ic_cdk::update]
 async fn wallet_balance(ton_address: String) -> u64 {
     let ton_response = ton_api::get_ton_wallet_info(ton_address).await.unwrap();
@@ -839,6 +839,11 @@ async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
 
     APP_TON_ADDRESS.set(wallet.address);
 
+    Ok(())
+}
+
+#[ic_cdk::update(guard = is_mint_controller)]
+async fn admin_mint_wallet_deploy() -> Result<(), String> {
     // deploy wallet
     _deploy_wallet(id(), None, None).await?;
 
@@ -946,9 +951,6 @@ async fn admin_setup(setup_args: Option<AdminSetup>) -> Result<(), String> {
     let wallet = create_ton_wallet(id(), None).await?;
 
     APP_TON_ADDRESS.set(wallet.address);
-
-    // deploy wallet
-    _deploy_wallet(id(), None, None).await?;
 
     Ok(())
 }

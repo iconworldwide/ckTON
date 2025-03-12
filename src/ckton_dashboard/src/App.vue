@@ -350,7 +350,8 @@ async function generateAllAddresses() {
 // Function to copy text to clipboard
 async function copyToClipboard(text) {
   try {
-    await navigator.clipboard.writeText(text);
+    let cp = navigator.clipboard;
+    await cp.writeText(text);
     showNotification('Copied to clipboard!', 'success');
   } catch (err) {
     showNotification('Failed to copy: ' + err.message, 'error');

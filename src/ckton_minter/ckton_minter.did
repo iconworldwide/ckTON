@@ -13,11 +13,10 @@ type HttpResponse = record {
 };
 type Result = variant { Ok; Err : text };
 type Result_1 = variant { Ok : text; Err : text };
-type Result_2 = variant { Ok : nat64; Err : text };
-type Result_3 = variant { Ok : record { text; nat64 }; Err : text };
+type Result_2 = variant { Ok : record { text; nat64 }; Err : text };
 type TransformArgs = record { context : blob; response : HttpResponse };
 service : () -> {
-  admin_setup : (opt AdminSetup) -> (Result);
+  admin_setup : (AdminSetup) -> (Result);
   deploy_ton_wallet : (opt blob, opt nat32) -> (Result_1);
   destroy_ton_wallet : (text, opt blob, opt nat32) -> (Result_1);
   export_candid : () -> (text) query;
@@ -26,11 +25,10 @@ service : () -> {
   get_ton_wallet_address : (opt principal, opt blob) -> (opt text) query;
   http_transform : (TransformArgs) -> (HttpResponse) query;
   ledger_id : () -> (text) query;
-  manual_mint : (text) -> (Result_2);
   mint : (text, nat64, opt blob, opt nat32) -> (Result_1);
   minter_ton_address : () -> (text) query;
   wallet_balance : (text) -> (nat64);
   wallet_count : () -> (nat64) query;
   wallet_deployed : (Account) -> (bool) query;
-  withdraw_native : (text, nat64) -> (Result_3);
+  withdraw_native : (text, nat64) -> (Result_2);
 }
