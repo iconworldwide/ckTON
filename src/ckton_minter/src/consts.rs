@@ -2,7 +2,7 @@
 // pub const TON_API_KEY : &str = "0d1616aea9f9fa3f0b155a1c20d61bbdca6ef393b35814bbd2e438727df799d0";
 pub const TON_API_KEY : &str = env!("TON_API_KEY");
 pub const TON_RPC_URL : &str = env!("TON_RPC_URL");
-pub const PROXY_URL : &str = "http://localhost:3000/proxy";
+pub const PROXY_URL : &str = env!("PROXY_URL");
 pub const PROXY_API_KEY : &str = "";
 
 #[cfg(network = "local")]

@@ -11,6 +11,7 @@ fn main() {
     let app_env = env::var("APP_ENV");
     let ton_api_key = env::var("TON_API_KEY").expect("There's no TON_API_KEY in the env");
     let ton_rpc_url = env::var("TON_RPC_URL").expect("There's no TON_RPC_URL in the env");
+    let proxy_url = env::var("PROXY_URL").expect("There's no PROXY_URL in the env");
 
     // Debug prints - these will show up in the build output
     println!("Debug - TON_API_KEY: {:?}", ton_api_key);
@@ -18,7 +19,7 @@ fn main() {
 
     println!("cargo:rustc-env=TON_API_KEY={}", ton_api_key);
     println!("cargo:rustc-env=TON_RPC_URL={}", ton_rpc_url);
-
+    println!("cargo:rustc-env=PROXY_URL={}", proxy_url);
     // // if ton_api_key.is_ok() {
     // //     let key = ton_api_key.unwrap();
     // //     println!("cargo:rustc-env=TON_API_KEY={}", key)
