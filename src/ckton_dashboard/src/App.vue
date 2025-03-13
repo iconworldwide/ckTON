@@ -121,6 +121,9 @@ async function fetchBalances() {
 
       let wallet_balance = await tonweb.getBalance(tonAddress.value);
       tonBalance.value = wallet_balance;
+      setTimeout(() => {
+        closeNotification();
+      }, 10000);
     }
   } catch (error) {
     showNotification('Failed to fetch balances: ' + error.message, 'error');
@@ -229,11 +232,6 @@ function showLoading(message = 'Processing...') {
     message,
     type: 'loading'
   };
-}
-
-// Hide loading notification
-function hideLoading() {
-  notification.value.show = false;
 }
 
 async function load_auth() {
