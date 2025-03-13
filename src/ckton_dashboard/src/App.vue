@@ -404,6 +404,83 @@ async function copyToClipboard(text) {
         </button>
       </div>
 
+      <!-- User Guide Card -->
+      <div class="bg-white rounded-lg shadow-md p-6 md:col-span-2 mb-6">
+        <h2 class="text-xl font-semibold mb-4">How to Use This Dashboard</h2>
+        
+        <div class="space-y-4">
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              1
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Connect to Internet Identity</h3>
+              <p class="text-gray-600">Click the "Connect to Internet Identity" button in the top right corner to authenticate.</p>
+            </div>
+          </div>
+          
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              2
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Generate Addresses and Fund Your TON Wallet</h3>
+              <p class="text-gray-600">Click "Generate All Addresses" to create your TON address and IC Account address. Fund your TON address with some TON tokens, then click "Refresh Balances" to verify.</p>
+            </div>
+          </div>
+          
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              3
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Deploy Your TON Wallet</h3>
+              <p class="text-gray-600">If your wallet is not yet deployed, click the "Deploy Wallet" button. This initializes your wallet on the TON blockchain.</p>
+            </div>
+          </div>
+          
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              4
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Refresh Your Balances</h3>
+              <p class="text-gray-600">Click "Refresh Balances" to see your updated TON and ckTON balances.</p>
+            </div>
+          </div>
+          
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              5
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Mint ckTON</h3>
+              <p class="text-gray-600">To convert TON to ckTON, enter an amount (less than your TON wallet balance) and an ICP/ICRC address to receive the ckTON. Click "Mint ckTON" to complete the conversion.</p>
+            </div>
+          </div>
+          
+          <div class="flex">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              6
+            </div>
+            <div class="ml-4">
+              <h3 class="font-medium">Withdraw to Native TON</h3>
+              <p class="text-gray-600">To convert ckTON back to TON, first send ckTON to the Burn address. Then enter an amount (less than the burn address balance) and a valid TON address. Click "Withdraw to TON" to complete the conversion.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 class="font-medium text-blue-800 mb-2">Important Notes:</h3>
+          <ul class="list-disc pl-5 text-blue-700 space-y-1">
+            <li>Ensure you have sufficient TON to pay for transaction fees.</li>
+            <li>Wallet deployment requires a small amount of TON for gas fees.</li>
+            <li>Transactions may take a few minutes to process on both networks.</li>
+            <li>Always verify addresses before sending any tokens.</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Balances Card -->
         <div class="bg-white rounded-lg shadow-md p-6">
@@ -481,7 +558,7 @@ async function copyToClipboard(text) {
             </div>
             <div>
               <label for="receiveAddress" class="block mb-1">Receive Address</label>
-              <input id="receiveAddress" v-model="receiveAddress" type="text" placeholder="Enter TON receive address"
+              <input id="receiveAddress" v-model="receiveAddress" type="text" placeholder="Enter ICP Account Address to receive ckTON"
                 class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" required />
             </div>
             <button type="submit"
@@ -613,7 +690,7 @@ async function copyToClipboard(text) {
     <!-- Footer -->
     <footer class="bg-gray-800 text-white p-4 mt-12">
       <div class="container mx-auto text-center">
-        <p>© 2023 ckTON Wallet. All rights reserved.</p>
+        <p>© 2025 ICON Worldwide AG, Switzerland. All rights reserved.</p>
       </div>
     </footer>
   </div>
