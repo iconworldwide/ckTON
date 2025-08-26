@@ -1,5 +1,16 @@
+// ==========================
+// ckton_minter/src/lib.rs
+// Main library file for the ckTON minter canister.
+// Handles TON wallet deployment, minting, burning, and admin setup logic.
+// ==========================
+
 use std::{
-    borrow::Cow, cell::RefCell, collections::{HashMap, VecDeque}, ops::{Deref, Div}, str::FromStr, time::Duration
+    borrow::Cow, 
+    cell::RefCell, 
+    collections::{HashMap, VecDeque}, 
+    ops::{Deref, Div}, 
+    str::FromStr, 
+    time::Duration
 };
 
 use base64::prelude::*;
@@ -43,23 +54,34 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+// WASM binaries for local development
 #[cfg(network = "local")]
 const INDEXER_WASM: &[u8] = include_bytes!("../bin/index-ng.wasm");
 
 #[cfg(network = "local")]
 const LEDGER_WASM: &[u8] = include_bytes!("../bin/ledger.wasm");
 
+// Thread-local storage for canister state
 thread_local! {
+    // Map of deployed wallets: Account -> TONDeployedWallet
     static DEPLOYED_WALLET: RefCell<HashMap<Account, TONDeployedWallet>> = RefCell::new(HashMap::new());
+    // Map of account balances (not always used)
     static ACCOUNT_BALANCES: RefCell<HashMap<Account, u64>> = RefCell::new(HashMap::new());
+    // Queue of pending tasks (mint, burn, deploy, etc.)
     static PENDING_TASKS: RefCell<MultiPOPVec<PendingTasks>> = RefCell::new(MultiPOPVec::new());
+    // The main TON address for the minter canister
     static APP_TON_ADDRESS: RefCell<TonAddress> = RefCell::new(TonAddress::NULL);
+    // Principal of the ICRC ledger canister
     static CK_LEDGER_CANISTER: RefCell<Principal> = RefCell::new(Principal::anonymous());
+    // Principal of the indexer canister
     static CK_INDEXER_CANISTER: RefCell<Principal> = RefCell::new(Principal::anonymous());
+    // Fee for transferring ckTON
     static CKTON_TRANSFER_FEE: RefCell<u64> = RefCell::new(1000);
+    // Fee for sending TON
     static TON_FEE: RefCell<u64> = RefCell::new(5_500u64);
 }
 
+// Initialization function: sets up periodic task processing
 #[ic_cdk::init]
 fn init() {
     ic_cdk_timers::set_timer_interval(Duration::from_secs(5), || {
@@ -71,6 +93,7 @@ fn init() {
             for task in tasks {
                 if let Some(task) = task {
                     match task {
+                        // Handle wallet deployment confirmation
                         PendingTasks::DeployWallet(account, ton_address, retry_count) => {
                             ic_cdk::println!("Processing DeployWallet task for account: {}", account);
                             ic_cdk::spawn(async move {
@@ -106,6 +129,7 @@ fn init() {
                                 }
                             });
                         }
+                        // Handle minting: check for incoming TON tx, then mint ckTON
                         PendingTasks::Mint(account, amount, hash, ton_addr, retry_count) => {
                             ic_cdk::println!("Processing Mint task for hash: {}", hash);
                             ic_cdk::spawn(async move {
@@ -156,7 +180,7 @@ fn init() {
                                 }
                             });
                         },
-    
+                        // Handle burning: check for outgoing TON tx, then burn ckTON
                         PendingTasks::Burn(caller, amount, hash, ton_addr, retry_count) => {
                             ic_cdk::spawn(async move {
                                 if retry_count > 10 {
@@ -232,11 +256,13 @@ fn init() {
     });
 }
 
+// Post-upgrade hook: re-initialize periodic tasks
 #[ic_cdk::post_upgrade]
 fn post_upgrade() {
     init();
 }
 
+// Verifies that a TON transaction sent funds to the expected destination address
 fn verify_mint_transaction(tx: &TonTransaction, dest_addr: &TonAddress) -> Result<u64, String> {
     let mssg = tx.out_msgs.iter().find(|msg| {
         let dest = msg.destination.parse::<TonAddress>();
@@ -257,10 +283,10 @@ fn verify_mint_transaction(tx: &TonTransaction, dest_addr: &TonAddress) -> Resul
 
     let amount = mssg.value.parse::<u64>().map_err(|e| e.to_string())?;
 
-
     Ok(amount)
 }
 
+// Query wallet balance from TON network (IC network only)
 #[cfg(network = "ic")]
 #[ic_cdk::update]
 async fn wallet_balance(ton_address: String) -> u64 {
@@ -275,7 +301,7 @@ async fn wallet_balance(ton_address: String) -> u64 {
     result.balance.parse::<u64>().unwrap()
 }
 
-
+// Manual mint for local development/testing (not for production)
 #[cfg(network = "local")]
 #[ic_cdk::update]
 async fn manual_mint(mssg_hash: String) -> Result<u64, String> {
@@ -330,6 +356,7 @@ async fn manual_mint(mssg_hash: String) -> Result<u64, String> {
     Ok(block)
 }
 
+// Generate a TON address for a given principal/subaccount
 #[ic_cdk::update]
 async fn generate_ton_address(owner: Option<Principal>, subaccount: Option<[u8; 32]>) -> String {
     let path = get_path(owner, subaccount);
@@ -341,11 +368,10 @@ async fn generate_ton_address(owner: Option<Principal>, subaccount: Option<[u8; 
     let wallet =
         TonWallet::derive_default(ic_ton_lib::wallet::WalletVersion::V4R2, &ton_signer).unwrap();
 
-
     get_ton_address_from_wallet(&wallet)
 }
 
-
+// Query the deployed TON wallet address for a given principal/subaccount
 #[ic_cdk::query(guard = is_authenticated)]
 fn get_ton_wallet_address(
     owner: Option<Principal>,
@@ -359,6 +385,7 @@ fn get_ton_wallet_address(
     DEPLOYED_WALLET.with_borrow(|store| store.get(&acc).map(|wallet| wallet.ton_address.clone()))
 }
 
+// Get the deposit address for a given principal (ICRC account)
 #[ic_cdk::query(guard = is_authenticated)]
 async fn get_deposit_address(owner: Option<Principal>) -> String {
     let acc = Account {
@@ -369,11 +396,13 @@ async fn get_deposit_address(owner: Option<Principal>) -> String {
     acc.to_string()
 }
 
+// Deploy a TON wallet for the caller (async, guarded)
 #[ic_cdk::update(guard = is_authenticated)]
 async fn deploy_ton_wallet(subaccount: Option<[u8; 32]>, expire : Option<u32>) -> Result<String, String> {
    _deploy_wallet(caller(), subaccount, expire).await
 }
 
+// Internal wallet deployment logic
 async fn _deploy_wallet(owner: Principal, subaccount: Option<[u8; 32]>, expire : Option<u32>) -> Result<String, String> {
     let acc = Account {
         owner,
@@ -452,6 +481,7 @@ async fn _deploy_wallet(owner: Principal, subaccount: Option<[u8; 32]>, expire :
     
 }
 
+// Destroy a TON wallet (send all funds to another TON address)
 #[ic_cdk::update(guard = is_authenticated)]
 async fn destroy_ton_wallet(to_ton_address: String, subaccount: Option<[u8; 32]>, expire : Option<u32>) -> Result<String, String> {
     let acc = Account {
@@ -524,12 +554,12 @@ async fn destroy_ton_wallet(to_ton_address: String, subaccount: Option<[u8; 32]>
     Ok(ton_response.result.unwrap().hash)
 }
 
-
-
+// Convert nanoseconds to seconds (u32)
 fn nanos_to_seconds(nanos: u64) -> u32 {
     (nanos / 1_000_000_000).try_into().unwrap()
 }
 
+// Get TON address as string from wallet
 fn get_ton_address_from_wallet(wallet: &TonWallet<ICTonSigner>) -> String {
     #[cfg(app_env = "dev")]
     let address = wallet.address.to_base64_url_flags(true, true);
@@ -540,6 +570,7 @@ fn get_ton_address_from_wallet(wallet: &TonWallet<ICTonSigner>) -> String {
     address
 }
 
+// Get TON address as string from TonAddress struct
 fn get_ton_address_from_address(address: &TonAddress) -> String {
     #[cfg(app_env = "dev")]
     let address = address.to_base64_url_flags(true, true);
@@ -550,6 +581,7 @@ fn get_ton_address_from_address(address: &TonAddress) -> String {
     address
 }
 
+// Withdraw native tokens: burn ckTON and send TON to a destination address
 #[ic_cdk::update(guard = is_authenticated)]
 async fn withdraw_native(to_ton_address: String, amount: u64) -> Result<(String, u64), String> {
    
@@ -660,6 +692,7 @@ async fn withdraw_native(to_ton_address: String, amount: u64) -> Result<(String,
     Ok((hash, amount_to_send))
 }
 
+// Create a TON wallet for a principal/subaccount
 async fn create_ton_wallet(
     owner: Principal,
     subaccount: Option<[u8; 32]>,
@@ -676,6 +709,7 @@ async fn create_ton_wallet(
     Ok(wallet)
 }
 
+// Mint ckTON for a user after confirming TON deposit
 #[ic_cdk::update(guard = is_authenticated)]
 async fn mint(
     to_account: String,
@@ -799,6 +833,7 @@ async fn mint(
     Ok(result.hash)
 }
 
+// Query the ledger canister principal as a string
 #[ic_cdk::query]
 async fn ledger_id() -> String {
     let ledger_canister = CK_LEDGER_CANISTER.with_borrow_mut(|canister| canister.clone());
@@ -806,6 +841,7 @@ async fn ledger_id() -> String {
     ledger_canister.to_string()
 }
 
+// Query the minter's TON address as a string
 #[ic_cdk::query]
 async fn minter_ton_address() -> String {
     let app_ton_address = APP_TON_ADDRESS.with_borrow_mut(|address| address.clone());
@@ -813,16 +849,19 @@ async fn minter_ton_address() -> String {
     app_ton_address.to_string()
 }
 
+// Query if a wallet is deployed for a given account
 #[ic_cdk::query]
 async fn wallet_deployed(account: Account) -> bool {
     DEPLOYED_WALLET.with_borrow(|store| store.contains_key(&account))
 }
 
+// Query the number of deployed wallets
 #[ic_cdk::query]
 async fn wallet_count() -> u64 {
     DEPLOYED_WALLET.with_borrow(|store| store.len() as u64)
 }
 
+// Admin setup for IC network: set canister principals and fees
 #[cfg(network = "ic")]
 #[ic_cdk::update(guard = is_mint_controller)]
 async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
@@ -846,6 +885,7 @@ async fn admin_setup(setup_args: AdminSetup) -> Result<(), String> {
     Ok(())
 }
 
+// Admin: deploy the minter's TON wallet
 #[ic_cdk::update(guard = is_mint_controller)]
 async fn admin_mint_wallet_deploy() -> Result<(), String> {
     // deploy wallet
@@ -854,6 +894,7 @@ async fn admin_mint_wallet_deploy() -> Result<(), String> {
     Ok(())
 }
 
+// Admin setup for local development: can auto-create ledger/indexer canisters
 #[cfg(network = "local")]
 #[ic_cdk::update(guard = is_mint_controller)]
 async fn admin_setup(setup_args: Option<AdminSetup>) -> Result<(), String> {
@@ -959,6 +1000,7 @@ async fn admin_setup(setup_args: Option<AdminSetup>) -> Result<(), String> {
     Ok(())
 }
 
+// Guard: only allow authenticated (non-anonymous) callers
 fn is_authenticated() -> Result<(), String> {
     let caller = caller();
     if caller == Principal::anonymous() {
@@ -967,6 +1009,7 @@ fn is_authenticated() -> Result<(), String> {
     Ok(())
 }
 
+// Guard: only allow canister controllers
 fn is_mint_controller() -> Result<(), String> {
     if !is_controller(&caller()) {
         return Err("Unauthorized".to_string());
@@ -974,6 +1017,7 @@ fn is_mint_controller() -> Result<(), String> {
     Ok(())
 }
 
+// Export Candid interface for the canister
 #[query]
 #[candid_method(query)]
 fn export_candid() -> String {
