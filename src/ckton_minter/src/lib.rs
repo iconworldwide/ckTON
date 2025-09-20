@@ -371,6 +371,16 @@ async fn generate_ton_address(owner: Option<Principal>, subaccount: Option<[u8; 
     get_ton_address_from_wallet(&wallet)
 }
 
+#[ic_cdk::update]
+async fn get_ton_transactions(ton_address: String) -> Result<Vec<TonTransaction>, String> {
+    let ton_response = ton_api::get_ton_transactions(ton_address).await.unwrap();
+
+    if !ton_response.ok {
+        return Err(ton_response.error.unwrap_or("Failed to get transactions".to_string()));
+    }
+    Ok(ton_response.result.unwrap())
+}
+
 // Query the deployed TON wallet address for a given principal/subaccount
 #[ic_cdk::query(guard = is_authenticated)]
 fn get_ton_wallet_address(

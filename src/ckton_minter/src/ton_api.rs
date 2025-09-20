@@ -1,11 +1,11 @@
-use candid::Nat;
+use candid::{CandidType, Nat};
 use ic_cdk::{api::management_canister::{http_request::{self, http_request, CanisterHttpRequestArgument, HttpHeader, HttpResponse, TransformArgs, TransformContext}, main::raw_rand}, query, update};
 use serde::Deserialize;
 use serde_json::json;
 
 use crate::{consts::{PROXY_API_KEY, PROXY_URL, TON_API_KEY, TON_RPC_URL}, types::ProxyRequest};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, CandidType)]
 pub struct TonTransactionMessage {
     pub body_hash : String,
     pub hash : String,
@@ -13,7 +13,7 @@ pub struct TonTransactionMessage {
     pub destination : String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, CandidType)]
 pub struct TonTransaction {
     pub in_msg : TonTransactionMessage,
     pub out_msgs : Vec<TonTransactionMessage>,

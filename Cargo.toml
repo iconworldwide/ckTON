@@ -1,6 +1,7 @@
 [workspace]
 members = [
-    "src/ckton_minter"
+    "src/ckton_minter",
+    # "src/ic-ton-utils"
 ]
 resolver = "2"
 [workspace.dependencies]
