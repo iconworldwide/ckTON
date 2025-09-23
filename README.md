@@ -1,55 +1,109 @@
-# `ckTon`
+# ckTON - TON-ICRC Bridge
 
-Welcome to your new `ckTon` project and to the Internet Computer development community. By default, creating a new project adds this README and some template files to your project directory. You can edit these template files to customize your project and to include your own code to speed up the development cycle.
+A decentralized bridge that enables seamless conversion between TON (The Open Network) and ckTON (ICRC-1 token on Internet Computer). This project provides a user-friendly dashboard and robust backend infrastructure for cross-chain token transfers.
 
-To get started, you might want to explore the project directory structure and the default configuration file. Working with this project in your development environment will not affect any production deployment or identity tokens.
+## Overview
 
-To learn more before you start working with `ckTon`, see the following documentation available online:
+ckTON is a bridge protocol that allows users to:
+- **Mint ckTON**: Convert native TON tokens to ckTON (ICRC-1 tokens) on the Internet Computer
+- **Burn ckTON**: Convert ckTON back to native TON tokens
+- **Deploy TON Wallets**: Automatically deploy and manage TON wallets for users
+- **Cross-chain Operations**: Seamlessly move value between TON and Internet Computer ecosystems
 
-- [Quick Start](https://internetcomputer.org/docs/current/developer-docs/setup/deploy-locally)
-- [SDK Developer Tools](https://internetcomputer.org/docs/current/developer-docs/setup/install)
-- [Rust Canister Development Guide](https://internetcomputer.org/docs/current/developer-docs/backend/rust/)
-- [ic-cdk](https://docs.rs/ic-cdk)
-- [ic-cdk-macros](https://docs.rs/ic-cdk-macros)
-- [Candid Introduction](https://internetcomputer.org/docs/current/developer-docs/backend/candid/)
+## Architecture
 
-If you want to start working on your project right away, you might want to try the following commands:
+The project consists of two main components:
 
+### 1. ckTON Minter Canister (Rust)
+- **Location**: `src/ckton_minter/`
+- **Purpose**: Core bridge logic for TON-ICRC conversions
+- **Features**:
+  - TON wallet deployment and management
+  - Minting ckTON tokens when TON is received
+  - Burning ckTON tokens to send TON
+  - Admin controls for ledger and indexer setup
+  - Secure transaction verification
+
+### 2. ckTON Dashboard (Vue.js)
+- **Location**: `src/ckton_dashboard/`
+- **Purpose**: User interface for bridge operations
+- **Features**:
+  - Internet Identity authentication
+  - Balance tracking (TON and ckTON)
+  - Mint/withdraw operations
+  - TON wallet deployment
+  - Real-time transaction status
+
+## Key Features
+
+- **🔐 Secure Authentication**: Internet Identity integration
+- **💰 Multi-token Support**: TON and ckTON balance management
+- **🚀 One-click Operations**: Simple mint/withdraw interface
+- **🔧 Auto-wallet Deployment**: Automatic TON wallet creation
+- **📊 Real-time Updates**: Live balance and transaction tracking
+- **🌐 Cross-chain**: Seamless TON ↔ IC conversions
+
+## Quick Start
+
+### Prerequisites
+- [DFX](https://internetcomputer.org/docs/current/developer-docs/setup/install/) installed
+- [Node.js](https://nodejs.org/) (v16 or higher)
+- [Rust](https://rustup.rs/) toolchain
+
+### Local Development
+
+1. **Start the Internet Computer replica:**
 ```bash
-cd ckTon/
-dfx help
-dfx canister --help
+dfx start --background
 ```
 
-## Running the project locally
-
-If you want to test your project locally, you can use the following commands:
-
+2. **Deploy the canisters:**
 ```bash
-# Starts the replica, running in the background
-dfx start --background
-
-# Deploys your canisters to the replica and generates your candid interface
 dfx deploy
 ```
 
-Once the job completes, your application will be available at `http://localhost:4943?canisterId={asset_canister_id}`.
-
-If you have made changes to your backend canister, you can generate a new candid interface with
-
-```bash
-npm run generate
-```
-
-at any time. This is recommended before starting the frontend development server, and will be run automatically any time you run `dfx deploy`.
-
-If you are making frontend changes, you can start a development server with
-
+3. **Start the dashboard development server:**
 ```bash
 npm start
 ```
 
-Which will start a server at `http://localhost:8080`, proxying API requests to the replica at port 4943.
+The dashboard will be available at `http://localhost:3001` and will automatically proxy API requests to the replica.
+
+### User Workflow
+
+1. **Connect to Internet Identity**: Click "Connect to Internet Identity" in the dashboard
+2. **Generate Addresses**: Click "Generate All Addresses" to create your TON and IC addresses
+3. **Fund Your TON Wallet**: Send TON tokens to your generated TON address
+4. **Deploy Wallet**: Click "Deploy Wallet" to initialize your TON wallet on the blockchain
+5. **Mint ckTON**: Enter an amount and IC address to convert TON to ckTON
+6. **Withdraw to TON**: Send ckTON to the burn address, then withdraw to a TON address
+
+## Technical Details
+
+### TON Wallet Deployment
+- **Automatic Generation**: Each user gets a unique TON wallet derived from their IC principal
+- **V4R2 Wallet Standard**: Uses the latest TON wallet version for optimal security
+- **Deployment Process**: Wallets are deployed on-demand when users have sufficient TON balance
+- **State Management**: Wallet deployment status is tracked and verified
+
+### Minting Process (TON → ckTON)
+1. User sends TON to their generated TON wallet address
+2. System detects the incoming transaction via TON API
+3. TON is transferred to the minter's main TON wallet
+4. Equivalent ckTON is minted to the user's IC account
+5. Transaction is verified and recorded
+
+### Burning Process (ckTON → TON)
+1. User sends ckTON to the burn address (minter's IC account)
+2. System detects the burn transaction
+3. TON is sent from the minter's wallet to the user's specified TON address
+4. Transaction is verified and recorded
+
+### Security Features
+- **Transaction Verification**: All TON transactions are verified before processing
+- **Retry Logic**: Failed operations are automatically retried with exponential backoff
+- **Fee Management**: Configurable fees for both TON and ckTON operations
+- **Admin Controls**: Secure admin functions for system configuration
 
 ### Note on frontend environment variables
 
@@ -60,31 +114,88 @@ If you are hosting frontend code somewhere without using DFX, you may need to ma
   - Setting `canisters -> {asset_canister_id} -> declarations -> env_override to a string` in `dfx.json` will replace `process.env.DFX_NETWORK` with the string in the autogenerated declarations
 - Write your own `createActor` constructor
 
-## Deploying to IC
+## Production Deployment
 
+### Deploy to Internet Computer
+
+1. **Prepare for deployment:**
 ```bash
 ./prep.sh
-dfx deploy --ic // you can use any identity to deploy
+dfx deploy --ic
 ```
 
-## Admin Setup.
-you need to setup the ledgers etc.
-
-Example
+2. **Admin Setup (Required for Production):**
 ```bash
- dfx canister call ckton_minter admin_setup '(record {ckton_transfer_fee=null; indexer_canister=principal "d3sjl-xaaaa-aaaam-aegnq-cai"; ledger_canister=principal "d4tp7-2yaaa-aaaam-aegna-cai"; ton_fee=null})' --ic
+# Set up the ledger and indexer canisters
+dfx canister call ckton_minter admin_setup '(record {
+  ckton_transfer_fee=null; 
+  indexer_canister=principal "YOUR_INDEXER_CANISTER_ID"; 
+  ledger_canister=principal "YOUR_LEDGER_CANISTER_ID"; 
+  ton_fee=null
+})' --ic
 ```
-## Get Minter TON address and fund it with TON
+
+3. **Get the minter's TON address:**
 ```bash
 dfx canister call ckton_minter minter_ton_address --ic
 ```
 
-## after You have funded the minter TON address, deploy the minter wallet.
+4. **Fund the minter TON address:**
+   - Send TON tokens to the address returned in step 3
+   - This address will be used for all TON operations
+
+5. **Deploy the minter's TON wallet:**
 ```bash
-dfx canister call ckton_minter admin_mint_wallet_deploy --ic // use the controller identity
+dfx canister call ckton_minter admin_mint_wallet_deploy --ic
 ```
 
+### Admin Configuration
 
+The admin setup requires:
+- **Ledger Canister**: ICRC-1 ledger for ckTON token management
+- **Indexer Canister**: Transaction indexing and history
+- **Transfer Fees**: Configurable fees for ckTON transfers
+- **TON Fees**: Configurable fees for TON operations
 
+### Production Considerations
 
+- **Security**: Ensure proper access controls for admin functions
+- **Monitoring**: Set up monitoring for transaction processing
+- **Backup**: Regular backups of canister state
+- **Updates**: Plan for canister upgrades and migrations
+
+## Development Resources
+
+### Documentation Links
+- [Internet Computer Developer Docs](https://internetcomputer.org/docs/current/developer-docs/)
+- [TON Documentation](https://docs.ton.org/)
+- [ICRC-1 Standard](https://github.com/dfinity/ICRC-1)
+- [Vue.js Documentation](https://vuejs.org/guide/)
+- [Rust Canister Development](https://internetcomputer.org/docs/current/developer-docs/backend/rust/)
+
+### Project Structure
+```
+ckTon/
+├── src/
+│   ├── ckton_minter/          # Rust minter canister
+│   │   ├── src/               # Rust source code
+│   │   └── Cargo.toml         # Rust dependencies
+│   └── ckton_dashboard/       # Vue.js dashboard
+│       ├── src/               # Vue.js source code
+│       └── package.json       # Node.js dependencies
+├── dfx.json                   # DFX configuration
+└── package.json               # Workspace configuration
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+© 2025 ICON Worldwide AG, Switzerland. All rights reserved.
 
